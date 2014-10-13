@@ -7,22 +7,55 @@
 
 ChangeLog:
 1- (10/07/2014) Initial release
+2- (10/12/2014) Added PrintColor
 
 */
 
 include( "dev_library/devlib_util.lua" )
 include( "dev_library/devlib_color.lua" )
 util.AddNetworkString( "DEVLib_print_cl" )
+util.AddNetworkString( "DEVLib_printcolor_cl" )
 local meta = FindMetaTable( "Player" )
 
-local function meta:PrintCL( message )
-	if not ( self and IsValid( self ) ) then return error("(dev>PrintCL) invalid player userdata") end
-	if not ( message and isstring( message ) ) then return error("(dev>PrintCL) invalid string") end
+local function meta:Print( message )
+	if not ( self and IsValid( self ) ) then return error("(dev>Print) invalid player userdata") end
+	if not ( message and isstring( message ) ) then return error("(dev>Print) invalid string") end
 
 	self:SendLua( [[ net.Receive( "DEVLib_print_cl", function() print( net.ReadString() ) end ) ]] )
-	timer.Simple( 0.1, function()
+	timer.Simple( 0.01, function()
 		net.Start( "DEVLib_print_cl" )
 			net.WriteString( message )
+		net.Send( self )
+	end )
+end
+
+local function meta:PrintColor( ... )
+	if not ( self and IsValid( self ) ) then return error("(dev>PrintColor) invalid player userdata") end
+	if not ( ... ) then return error("(dev>PrintColor) invalid args") end
+
+	local tab = { ... }
+	local args = {}
+
+	for k, v in next, tab do
+		if ( type( v ) == "string" ) then
+			table.insert( args, v )
+		elseif ( type( v ) == "table" ) then
+			local val = false
+
+			if v.a then
+				val = Color( v.r, v.g, v.b, v.a )
+			else
+				val = Color( v.r, v.g, v.b )
+			end
+
+			table.insert( args, val )
+		end
+	end
+
+	self:SendLua( [[ net.Receive( "DEVLib_printcolor_cl", function() chat.AddText( unpack( net.ReadTable() ) ) end ) ]] )
+	timer.Simple( 0.01, function()
+		net.Start( "DEVLib_printcolor_cl" )
+			net.WriteTable( args )
 		net.Send( self )
 	end )
 end
