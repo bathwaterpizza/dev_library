@@ -8,6 +8,7 @@
 ChangeLog:
 1- (10/07/2014) Initial release
 2- (10/12/2014) Added PrintColor
+3- (10/14/2014) Added MsgColor and Notify
 
 */
 
@@ -15,6 +16,8 @@ include( "dev_library/devlib_util.lua" )
 include( "dev_library/devlib_color.lua" )
 util.AddNetworkString( "DEVLib_print_cl" )
 util.AddNetworkString( "DEVLib_printcolor_cl" )
+util.AddNetworkString( "DEVLib_msgcolor_cl" )
+util.AddNetworkString( "DEVLib_notify_cl" )
 local meta = FindMetaTable( "Player" )
 
 local function meta:Print( message )
@@ -56,6 +59,53 @@ local function meta:PrintColor( ... )
 	timer.Simple( 0.01, function()
 		net.Start( "DEVLib_printcolor_cl" )
 			net.WriteTable( args )
+		net.Send( self )
+	end )
+end
+
+local function meta:MsgColor( ... )
+	if not ( self and IsValid( self ) ) then return error("(dev>MsgColor) invalid player userdata") end
+	if not ( ... ) then return error("(dev>MsgColor) invalid args") end
+
+	local tab = { ... }
+	local args = {}
+
+	for k, v in next, tab do
+		if ( type( v ) == "string" ) then
+			table.insert( args, v )
+		elseif ( type( v ) == "table" ) then
+			local val = false
+
+			if v.a then
+				val = Color( v.r, v.g, v.b, v.a )
+			else
+				val = Color( v.r, v.g, v.b )
+			end
+
+			table.insert( args, val )
+		end
+	end
+
+	self:SendLua( [[ net.Receive( "DEVLib_msgcolor_cl", function() MsgC( unpack( net.ReadTable() ) ) end ) ]] )
+	timer.Simple( 0.01, function()
+		net.Start( "DEVLib_msgcolor_cl" )
+			net.WriteTable( args )
+		net.Send( self )
+	end )
+end
+
+local function meta:Notify( ntxt, ntype, ndur )
+	if not ( self and IsValid( self ) ) then return error("(dev>Notify) invalid player userdata") end
+	if not ntxt then return error("(dev>Notify) invalid string") end
+	if not ( ntype and isnumber( ntype ) ) then return error("(dev>Notify) invalid type number") end
+	if not ( ndur and isnumber( ndur ) ) then return error("(dev>Notify) invalid duration number") end
+
+	self:SendLua( [[ net.Receive( "DEVLib_notify_cl", function() notification.AddLegacy( net.ReadString(), net.ReadDouble(), net.ReadDouble() ) end ) ]] )
+	timer.Simple( 0.01, function()
+		net.Start( "DEVLib_notify_cl" )
+			net.WriteString( ntxt )
+			net.WriteDouble( ntype )
+			net.WriteDouble( ndur )
 		net.Send( self )
 	end )
 end
