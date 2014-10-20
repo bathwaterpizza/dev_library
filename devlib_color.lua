@@ -11,7 +11,7 @@ ChangeLog:
 
 */
 
-local clr = {}
+clr = {}
 clr.red = {}
 clr.red.flat = Color( 255, 0, 0 )
 clr.red.dark = Color( 155, 0, 0 )

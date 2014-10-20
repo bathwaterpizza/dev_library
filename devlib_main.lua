@@ -8,19 +8,21 @@
 ChangeLog:
 1- (10/07/2014) Initial release
 2- (10/12/2014) Added PrintColor
-3- (10/14/2014) Added MsgColor and Notify
+3- (10/14/2014) Added MsgColor, Notify and PNotify
 
 */
 
 include( "dev_library/devlib_util.lua" )
 include( "dev_library/devlib_color.lua" )
+
 util.AddNetworkString( "DEVLib_print_cl" )
 util.AddNetworkString( "DEVLib_printcolor_cl" )
 util.AddNetworkString( "DEVLib_msgcolor_cl" )
 util.AddNetworkString( "DEVLib_notify_cl" )
+util.AddNetworkString( "DEVLib_pnotify_cl" )
 local meta = FindMetaTable( "Player" )
 
-local function meta:Print( message )
+function meta:Print( message )
 	if not ( self and IsValid( self ) ) then return error("(dev>Print) invalid player userdata") end
 	if not ( message and isstring( message ) ) then return error("(dev>Print) invalid string") end
 
@@ -32,7 +34,7 @@ local function meta:Print( message )
 	end )
 end
 
-local function meta:PrintColor( ... )
+function meta:PrintColor( ... )
 	if not ( self and IsValid( self ) ) then return error("(dev>PrintColor) invalid player userdata") end
 	if not ( ... ) then return error("(dev>PrintColor) invalid args") end
 
@@ -63,7 +65,7 @@ local function meta:PrintColor( ... )
 	end )
 end
 
-local function meta:MsgColor( ... )
+function meta:MsgColor( ... )
 	if not ( self and IsValid( self ) ) then return error("(dev>MsgColor) invalid player userdata") end
 	if not ( ... ) then return error("(dev>MsgColor) invalid args") end
 
@@ -86,7 +88,7 @@ local function meta:MsgColor( ... )
 		end
 	end
 
-	self:SendLua( [[ net.Receive( "DEVLib_msgcolor_cl", function() MsgC( unpack( net.ReadTable() ) ) end ) ]] )
+	self:SendLua( [[ net.Receive( "DEVLib_msgcolor_cl", function() MsgC( unpack( net.ReadTable() ), "\n" ) end ) ]] )
 	timer.Simple( 0.01, function()
 		net.Start( "DEVLib_msgcolor_cl" )
 			net.WriteTable( args )
@@ -94,7 +96,7 @@ local function meta:MsgColor( ... )
 	end )
 end
 
-local function meta:Notify( ntxt, ntype, ndur )
+function meta:Notify( ntxt, ntype, ndur )
 	if not ( self and IsValid( self ) ) then return error("(dev>Notify) invalid player userdata") end
 	if not ntxt then return error("(dev>Notify) invalid string") end
 	if not ( ntype and isnumber( ntype ) ) then return error("(dev>Notify) invalid type number") end
@@ -110,14 +112,29 @@ local function meta:Notify( ntxt, ntype, ndur )
 	end )
 end
 
-local function meta:GetProfile()
+function meta:PNotify( str, time )
+	if not ( self and IsValid( self ) ) then return error("(dev>PNotify) invalid player userdata") end
+	if not str then return error("(dev>PNotify) invalid string") end
+	if not ( time and isnumber( time ) ) then return error("(dev>PNotify) invalid number") end
+
+	self:SendLua( [[ net.Receive( "DEVLib_pnotify_cl", function() notification.AddProgress( "devlib", net.ReadString() ) timer.Simple( net.ReadDouble(), 
+	function() notification.Kill( "devlib" ) end ) end ) ]] )
+	timer.Simple( 0.01, function()
+		net.Start( "DEVLib_pnotify_cl" )
+			net.WriteString( str )
+			net.WriteDouble( time )
+		net.Send( self )
+	end )
+end
+
+function meta:GetProfile()
 	if not ( self and IsValid( self ) ) then return error("(dev>GetProfile) invalid player userdata") end
 
 	local url = "http://steamcommunity.com/profiles/" .. self:SteamID64()
 	return tostring( url )
 end
 
-local function meta:KillSpawn( delay )
+function meta:KillSpawn( delay )
 	if not ( self and IsValid( self ) ) then return error("(dev>KillSpawn) invalid player userdata") end
 	if not ( delay and isnumber( delay ) ) then return error("(dev>KillSpawn) invalid delay number") end
 	if delay < 0.1 then delay = 0.1 end
@@ -126,15 +143,20 @@ local function meta:KillSpawn( delay )
 	timer.Simple( delay, function() self:Spawn() end )
 end
 
-local function meta:cprint( ... )
+function meta:cprint( ... )
 	if not ... then return error("(dev>cprint) invalid string content") end
 	if not ( self and IsValid( self ) ) then return error("(dev>cprint) invalid player userdata") end
 
 	self:PrintMessage( HUD_PRINTCONSOLE, ... )
 end
 
-local function cprintall( ... )
+function cprintall( ... )
 	if not ... then return error("(dev>cprintall) invalid string content") end
 
 	PrintMessage( HUD_PRINTCONSOLE, ... )
 end
+
+--todo function respawn
+--saves player's weapons
+--saves player's smg, pistol and buckshot ammo
+--respawns at same place and with same view angle

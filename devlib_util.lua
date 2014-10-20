@@ -10,7 +10,7 @@ ChangeLog:
 
 */
 
-local DEV = DEV or {}
+DEV = DEV or {}
 
 function DEV.IsValidID( idstr )
 	if not ( idstr ) then return error("(dev>IsValidID) invalid id string") end
