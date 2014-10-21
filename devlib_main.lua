@@ -87,8 +87,9 @@ function meta:MsgColor( ... )
 			table.insert( args, val )
 		end
 	end
+	table.insert( args, "\n" )
 
-	self:SendLua( [[ net.Receive( "DEVLib_msgcolor_cl", function() MsgC( unpack( net.ReadTable() ), "\n" ) end ) ]] )
+	self:SendLua( [[ net.Receive( "DEVLib_msgcolor_cl", function() MsgC( unpack( net.ReadTable() ) ) end ) ]] )
 	timer.Simple( 0.01, function()
 		net.Start( "DEVLib_msgcolor_cl" )
 			net.WriteTable( args )

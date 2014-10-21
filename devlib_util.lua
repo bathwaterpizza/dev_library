@@ -55,6 +55,8 @@ end
 
 function DEV.StripPort( ip )
 	if not ( ip ) then return error("(dev>StripPort) invalid ip string") end
+	local str = string.match( ip, ":" )
+	if not str or ( str == "" ) then return ip end
 
 	local _ip = string.Explode( ":", ip )
 	return tostring( _ip[1] )
